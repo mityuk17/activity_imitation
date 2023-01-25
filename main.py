@@ -29,7 +29,7 @@ async def get_channel(client: TelegramClient):
         channel = None
     return [data,channel]
 from opentele.td import TDesktop
-async def main(post_num):
+async def main():
 
     sessions = get_sessions()
     phrases = get_phrases()
@@ -49,14 +49,11 @@ async def main(post_num):
                     await client(ImportChatInviteRequest(channel[0]))
                 except Exception as e:
                     print(e)
-            msg = await client.get_messages(channel[1].id, post)
-            await msg.reply(phrases.pop(), quote=True)
+            msg = (await client.get_messages(channel[1].id, post))[0]
+            print(msg)
+            #await msg.reply(phrases.pop())
+            await client.send_message(entity=channel[0], message=phrases.pop(), comment_to=msg)
 def start():
-    while True:
-        post_num = input('Введите номер поста(счёт начинается с последнего поста в канале):')
-        if post_num.isdigit():
-            post_num = int(post_num)
-            break
-        else:
-            print('Некорректное значение.')
-    asyncio.run(main(post_num))
+
+    asyncio.run(main())
+start()
