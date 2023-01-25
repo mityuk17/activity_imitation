@@ -3,6 +3,8 @@ import os
 
 from opentele.api import API, UseCurrentSession
 from telethon import TelegramClient
+from telethon.tl.functions.channels import JoinChannelRequest
+from telethon.tl.functions.messages import ImportChatInviteRequest
 
 
 def get_phrases():
@@ -19,9 +21,13 @@ def get_sessions():
     return subdir
 async def get_channel(client: TelegramClient):
     with open('channel_link.txt', 'r') as file:
-        data = file.readlines()[0].strip()
-    channel = await client.get_entity(data)
-    return channel
+        data = file.readlines()[0].strip().strip('https://').strip('t.me/').strip('joinchat/')
+    try:
+        channel = await client.get_entity(data)
+    except Exception as e:
+        print(e)
+        channel = None
+    return [data,channel]
 from opentele.td import TDesktop
 async def main(post_num):
 
@@ -35,7 +41,15 @@ async def main(post_num):
         client = await tdesk.ToTelethon(f'session_files/{session}',UseCurrentSession, api= API.TelegramAndroid.Generate(session))
         async with client:
             channel = await get_channel(client)
-            msg = await client.get_messages(channel.id, post)
+            try:
+                await client(JoinChannelRequest(channel[1]))
+            except Exception as e:
+                print(e)
+                try:
+                    await client(ImportChatInviteRequest(channel[0]))
+                except Exception as e:
+                    print(e)
+            msg = await client.get_messages(channel[1].id, post)
             await msg.reply(phrases.pop(), quote=True)
 def start():
     while True:
